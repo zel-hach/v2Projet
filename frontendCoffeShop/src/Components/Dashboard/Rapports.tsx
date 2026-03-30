@@ -55,8 +55,8 @@ const Rapports = () => {
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-black 2xl font-semibold text-black orange-900">Rapports</h1>
-          <p className="mt-1 text-black sm text-black orange-900/75">
+          <h1 className="text-2xl font-semibold text-black">Rapports</h1>
+          <p className="mt-1 text-sm text-black/75">
             Synthèse des ventes et consommation — {periodLabel}
           </p>
         </div>
@@ -74,8 +74,8 @@ const Rapports = () => {
               onClick={() => setPeriod(id)}
               className={`rounded-xl px-4 py-2 text-black sm font-medium transition ${
                 period === id
-                  ? 'bg-[#FF5722]/25 text-black [#FF5722] ring-1 ring-[#FF5722]/40'
-                  : 'border border-orange-900/20 text-black orange-900 hover:bg-orange-900/10'
+                  ? 'bg-[#FF5722]/25 text-black [#FF5722] ring-1 ring-[#f68716]/40'
+                  : 'border border-[#f68716]/20 text-black hover:bg-[#f68716]/10'
               }`}
             >
               {label}
@@ -85,58 +85,58 @@ const Rapports = () => {
       </div>
 
       {exportHint ? (
-        <p className="rounded-xl border border-[#FF5722]/30 bg-[#FF5722]/10 px-4 py-3 text-black sm text-black orange-900">
+        <p className="rounded-xl border border-[#f68716]/30 bg-[#f68716]/10 px-4 py-3 text-sm text-black">
           {exportHint}
         </p>
       ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-2xl border border-orange-900/20 bg-[#0f112d] p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
-          <p className="text-black sm text-black orange-900">Tasses (période)</p>
+        <article className="rounded-2xl border border-[#f68716]/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+          <p className="text-sm text-black">Tasses (période)</p>
           <p className="mt-2 text-black 3xl font-bold text-black [#FF5722]">{totalCups}</p>
-          <p className="mt-2 text-black xs text-black orange-900/70">Données démo basées sur les clients servis</p>
+          <p className="mt-2 text-xs text-black/70">Données démo basées sur les clients servis</p>
         </article>
-        <article className="rounded-2xl border border-orange-900/20 bg-[#0f112d] p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
-          <p className="text-black sm text-black orange-900">Clients servis</p>
+        <article className="rounded-2xl border border-[#f68716]/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+          <p className="text-sm text-black">Clients servis</p>
           <p className="mt-2 text-black 3xl font-bold text-black [#FF5722]">{servedUsers.length}</p>
-          <p className="mt-2 text-black xs text-black orange-900/70">Actifs sur la sélection</p>
+          <p className="mt-2 text-xs text-black/70">Actifs sur la sélection</p>
         </article>
-        <article className="rounded-2xl border border-orange-900/20 bg-[#0f112d] p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
-          <p className="text-black sm text-black orange-900">Moy. tasses / client</p>
+        <article className="rounded-2xl border border-[#f68716]/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+          <p className="text-sm text-black">Moy. tasses / client</p>
           <p className="mt-2 text-black 3xl font-bold text-black [#FF5722]">{avgCupsPerClient}</p>
-          <p className="mt-2 text-black xs text-black orange-900/70">Aujourd&apos;hui (jeu de données)</p>
+          <p className="mt-2 text-xs text-black/70">Aujourd&apos;hui (jeu de données)</p>
         </article>
-        <article className="rounded-2xl border border-orange-900/20 bg-[#0f112d] p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
-          <p className="text-black sm text-black orange-900">Pic semaine</p>
+        <article className="rounded-2xl border border-[#f68716]/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+          <p className="text-sm text-black">Pic semaine</p>
           <p className="mt-2 text-black 2xl font-bold text-black [#FF5722]">{maxWeeklyCups} tasses</p>
-          <p className="mt-2 text-black xs text-black orange-900/70">Jour le plus chargé (aperçu hebdo)</p>
+          <p className="mt-2 text-xs text-black/70">Jour le plus chargé (aperçu hebdo)</p>
         </article>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <article className="rounded-2xl border border-orange-900/20 bg-[#0f112d] p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)] lg:col-span-3">
+        <article className="rounded-2xl border border-[#f68716]/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)] lg:col-span-3">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-black lg font-semibold text-black orange-900">Consommation hebdomadaire</h2>
-            <span className="text-black xs text-black orange-900/80">Tasses / jour</span>
+            <h2 className="text-lg font-semibold text-black">Consommation hebdomadaire</h2>
+            <span className="text-xs text-black/80">Tasses / jour</span>
           </div>
           <div className="flex h-56 items-end gap-3">
             {weeklyConsumption.map((item) => (
               <div key={item.day} className="flex flex-1 flex-col items-center gap-2">
-                <div className="flex h-44 w-full items-end overflow-hidden rounded-md bg-[#121435]">
+                <div className="flex h-44 w-full items-end overflow-hidden rounded-md bg-white">
                   <div
                     className="w-full rounded-md bg-gradient-to-t from-[#FF5722] to-[#ff8d6a]"
                     style={{ height: `${(item.cups / maxWeeklyCups) * 100}%` }}
                   />
                 </div>
-                <span className="text-black xs text-black orange-900/80">{item.day}</span>
+                <span className="text-xs text-black/80">{item.day}</span>
               </div>
             ))}
           </div>
         </article>
 
-        <article className="rounded-2xl border border-orange-900/20 bg-[#0f112d] p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)] lg:col-span-2">
-          <h2 className="mb-4 text-black lg font-semibold text-black orange-900">Exports</h2>
-          <p className="mb-4 text-black sm text-black orange-900/75">
+        <article className="rounded-2xl border border-[#f68716]/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)] lg:col-span-2">
+          <h2 className="mb-4 text-lg font-semibold text-black">Exports</h2>
+          <p className="mb-4 text-sm text-black/75">
             Génère un fichier pour comptabilité ou analyse externe.
           </p>
           <div className="flex flex-col gap-3">
@@ -150,7 +150,7 @@ const Rapports = () => {
             <button
               type="button"
               onClick={() => showExportMsg('Export PDF')}
-              className="rounded-xl border border-orange-900/30 px-4 py-3 text-black sm font-medium text-black orange-900 transition hover:bg-orange-900/10"
+              className="rounded-xl border border-[#f68716]/30 px-4 py-3 text-sm font-medium text-black transition hover:bg-[#f68716]/10"
             >
               Exporter PDF (rapport visuel)
             </button>
@@ -158,14 +158,14 @@ const Rapports = () => {
         </article>
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-orange-900/20 bg-[#0f112d] shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
-        <div className="flex items-center justify-between border-b border-orange-900/15 px-4 py-4">
-          <h2 className="font-semibold text-black orange-900">Détail par type de boisson</h2>
-          <span className="text-black xs text-black orange-900/75">{byCoffeeType.length} type(s)</span>
+      <section className="overflow-hidden rounded-2xl border border-[#f68716]/20 bg-white shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+        <div className="flex items-center justify-between border-b border-[#f68716]/15 px-4 py-4">
+          <h2 className="font-semibold text-black">Détail par type de boisson</h2>
+          <span className="text-xs text-black/75">{byCoffeeType.length} type(s)</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-black left">
-            <thead className="bg-[#FF5722]/15 text-black orange-900">
+            <thead className="bg-[#f68716]/10 text-black">
               <tr>
                 <th className="px-4 py-3 font-semibold">Boisson</th>
                 <th className="px-4 py-3 font-semibold">Clients</th>
@@ -177,19 +177,19 @@ const Rapports = () => {
               {byCoffeeType.map((row) => {
                 const share = totalCups > 0 ? Math.round((row.tasses / totalCups) * 100) : 0;
                 return (
-                  <tr key={row.type} className="border-t border-orange-900/15 transition hover:bg-[#121435]/80">
-                    <td className="px-4 py-3 font-medium text-black orange-900">{row.type}</td>
-                    <td className="px-4 py-3 text-black orange-900">{row.clients}</td>
+                  <tr key={row.type} className="border-t border-[#f68716]/15 transition hover:bg-[#f68716]/10">
+                    <td className="px-4 py-3 font-medium text-black">{row.type}</td>
+                    <td className="px-4 py-3 text-black">{row.clients}</td>
                     <td className="px-4 py-3">{row.tasses}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="h-2 flex-1 max-w-[120px] rounded-full bg-[#121435]">
+                        <div className="h-2 flex-1 max-w-[120px] rounded-full bg-white">
                           <div
                             className="h-2 rounded-full bg-gradient-to-r from-[#FF5722] to-[#ff8d6a]"
                             style={{ width: `${share}%` }}
                           />
                         </div>
-                        <span className="text-black sm text-black orange-900">{share}%</span>
+                        <span className="text-sm text-black">{share}%</span>
                       </div>
                     </td>
                   </tr>

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Login from './Components/Login'; // Import du nouveau fichier
 import LandingPage from './Components/LandingPage';
 import Dashboard from './Components/Dashboard';
 import BodyDashboard from './Components/BodyDashboard';
@@ -10,7 +11,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        {/* La page de Login est maintenant accessible sur "/" ou "/login" */}
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        
+        {/* Route existante pour la landing si besoin */}
+        <Route path="/home" element={<LandingPage />} />
+
+        {/* Routes protégées du Dashboard */}
         <Route path="/dashboard" element={<Dashboard />}>
           <Route index element={<BodyDashboard />} />
           <Route path="utilisateurs" element={<Utilisateurs />} />
