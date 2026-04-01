@@ -6,7 +6,7 @@ const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[#070814] text-black orange-900 antialiased">
+    <div className="flex min-h-screen w-full justify-between bg-[#070814] text-black antialiased">
       {sidebarOpen ? (
         <button
           type="button"
@@ -19,8 +19,8 @@ const Dashboard = () => {
       <DashboardSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex min-h-screen min-w-0 flex-1 flex-col bg-slate-100">
-        <DashboardMobileHeader onOpenMenu={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto">
+          <DashboardMobileHeader onOpenMenu={() => setSidebarOpen(true)} />
+        <main className="flex-1 flex overflow-y-auto w-full">
           <Outlet />
         </main>
       </div>

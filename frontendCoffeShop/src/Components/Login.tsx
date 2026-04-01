@@ -1,86 +1,219 @@
-import { useState, type FormEvent } from 'react';
+
+
+
+import React, { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const Login = () => {
+interface FieldProps {
+  id: string;
+  label: string;
+  type: string;
+  value: string;
+  placeholder: string;
+  onChange: (v: string) => void;
+  icon: React.ReactNode;
+}
+
+const Field: React.FC<FieldProps> = ({ id, label, type, value, placeholder, onChange, icon }) => {
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <div className="space-y-2">
+      <label
+        htmlFor={id}
+        style={{ color: focused ? '#f68716' : 'black' }}
+        className="flex items-center gap-2 text-[12px] text-black font-black uppercase tracking-[0.3em] transition-colors duration-300"
+      >
+        {label}
+      </label>
+
+      <div className="relative">
+        <input
+          id={id}
+          type={type}
+          required
+          value={value}
+          placeholder={placeholder}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          onChange={(e) => onChange(e.target.value)}
+          style={{
+            borderBottomColor: focused ? '#f68716' : '#e2e8f0',
+            caretColor: '#f68716',
+          }}
+          className="w-full  border-b-2 pl-2 pb-3 pt-1 text-[#0f172a] font-semibold text-sm placeholder:text-[#94a3b8]/80 outline-none transition-all duration-300"
+        />
+
+        <span
+          style={{ width: focused ? '100%' : '0%', background: '#f68716' }}
+          className="absolute bottom-0 left-0 h-[2px] transition-all duration-500 ease-out"
+        />
+      </div>
+    </div>
+  );
+};
+
+const Login: React.FC = () => {
+  const [loading, setLoading]   = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const navigate = useNavigate();
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    navigate('/dashboard');
-  };
 
+  const handleSubmit = async (e: FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+
+  try {
+    const response = await fetch('http://localhost:7000/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed');
+    }
+
+    if (data.token) {
+      localStorage.setItem('token', data.token);
+    }
+    navigate('/dashboard/utilisateurs');
+
+  } catch (error: any) {
+    console.error('Error:', error.message);
+  }
+};
   return (
-    <section className="flex min-h-svh w-full max-w-full flex-col justify-center border-orange-500/30 bg-black/80 px-8 py-10 text-black left shadow-2xl backdrop-blur-md sm:px-12 md:max-w-xl lg:max-w-2xl md:border-l">
-      <div className="mb-8 flex flex-col justify-center items-center gap-1">
-        {/* <img
-          src="/La-startup-station.jpg"
-          alt="La Startup Station"
-          className="h-14 w-14 rounded-xl object-cover ring-2 ring-orange-500/40"
-        /> */}
-          <h1 className="w-full text-black 3xl font-bold leading-tight text-black white sm:text-black 4xl text-black center">
-            Login
-          </h1>
-      </div>
-      <form className="w-full space-y-5" onSubmit={handleSubmit} noValidate>
-        <div>
-          <label htmlFor="email" className="mb-2 block text-black sm font-medium text-black white/90">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="exemple@cafe.com"
-            className="w-full rounded-xl border border-orange-500/40 bg-black/50 px-4 py-3 text-black white placeholder:text-black zinc-500 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-500/40"
-          />
-        </div>
+    <div className="min-h-screen w-full flex items-center justify-center p-4 border-2 border-[#f68716]
+    bg-[linear-gradient(to_top,#ffffff_5%,#f68716_60%,#f68716_95%)]">
 
-        <div>
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <label htmlFor="password" className="text-black sm font-medium text-black white/90">
-              Mot de passe
-            </label>
-            <button
-              type="button"
-              className="text-black xs text-black orange-400 underline-offset-2 hover:text-black orange-300 hover:underline"
-            >
-              Oublié ?
-            </button>
-          </div>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full rounded-xl border border-orange-500/40 bg-black/50 px-4 py-3 text-black white placeholder:text-black zinc-500 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-500/40"
-          />
-        </div>
+      <div
+        className="relative w-full flex overflow-hidden bg-white"
+        style={{
+          maxWidth: 960,
+          borderRadius: 28,
+          border: '2px solidrgb(18, 17, 15)',
 
-        <label className="flex cursor-pointer items-center gap-2 text-black sm text-black zinc-300">
-          <input
-            type="checkbox"
-            name="remember"
-            className="size-4 rounded border-orange-500/50 bg-black/50 text-black orange-500 focus:ring-orange-500/40"
-          />
-          Se souvenir de moi
-        </label>
+  
+          boxShadow: `
+            0 10px 30px rgba(0,0,0,0.06),
+            0 4px 10px rgba(0,0,0,0.04),
+            0 0 0 1px rgba(246,135,22,0.05)
+          `,
 
-        <button
-          type="submit"
-          className="mt-2 w-full rounded-xl bg-orange-500 py-3 font-semibold text-black black shadow-[0_10px_30px_rgba(251,146,60,0.35)] transition hover:bg-orange-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+          minHeight: 620,
+        }}
+      >
+
+        <div
+          className="hidden md:flex md:w-[44%] flex-col relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(145deg,#ffedd5, #fff7ed)',
+            borderRight: '1px solid #fff7ed',
+          }}
         >
-          Se connecter
-        </button>
-      </form>
-    </section>
+          <div className="absolute top-10 left-10 right-10 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full overflow-hidden">
+              <img src="/logo.svg" alt="Logo" className="w-full h-full object-cover" />
+            </div>
+            <span className="text-[13px] font-black uppercase tracking-widest text-[#94a3b8]">
+              Smart Robotic Arm
+            </span>
+          </div>
+
+          <div className="flex-1 flex flex-col items-center justify-center px-10">
+            <div className="relative mb-10">
+              <div
+                className="absolute inset-0 rounded-full animate-ping"
+                style={{
+                  border: '1px solid rgba(246,135,22,0.25)',
+                  transform: 'scale(1.6)',
+                  animationDuration: '3s',
+                }}
+              />
+
+              <div
+                className="relative w-[88px] h-[88px] rounded-full flex items-center justify-center"
+                style={{
+                  border: '1px solid rgba(246,135,22,0.3)',
+                  boxShadow: '0 0 20px rgba(246,135,22,0.15)',
+                }}
+              >
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f68716" strokeWidth="1.6">
+                  <path d="M17 8h1a4 4 0 1 1 0 8h-1" />
+                  <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <h1 className="text-[3rem] font-black uppercase text-[#0f172a]">
+                Robot
+              </h1>
+              <h1 className="text-[3rem] font-black uppercase text-[#f68716]">
+                Café
+              </h1>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full md:w-[56%] flex flex-col justify-center px-10 md:px-14 py-14">
+
+          <div className="mb-12 text-center">
+            <h2 className="text-[3rem] font-black uppercase text-bold text-[#f68716]">
+              Administration
+            </h2>
+            <p className="text-[13px] font-medium mt-3 text-black text-bold">
+              Authentification sécurisée requise pour accéder au terminal.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-9">
+
+            <Field
+              id="email"
+              label="Email"
+              type="email"
+              value={email}
+              placeholder="admin@example.com"
+              onChange={setEmail}
+              icon={<span>@</span>}
+            />
+
+            <Field
+              id="password"
+              label="Password"
+              type="password"
+              value={password}
+              placeholder="••••••••"
+              onChange={setPassword}
+              icon={<span>*</span>}
+            />
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-[54px] font-black uppercase rounded-xl transition-all duration-300"
+              style={{
+                background: '#f68716',
+                color: '#fff',
+                boxShadow: loading
+                  ? 'none'
+                  : '0 8px 20px rgba(246,135,22,0.35)',
+              }}
+            >
+              {loading ? 'Loading...' : 'Connexion'}
+            </button>
+
+          </form>
+        </div>
+      </div>
+    </div>
   );
 };
 

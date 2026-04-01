@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { coffeeUsers } from '../../data/coffeeUsers';
+import { useEffect, useMemo, useState } from 'react';
+import { fetchUsers, type CoffeeUser } from '../../data/coffeeUsers';
 
 const weeklyConsumption = [
   { day: 'Lun', cups: 6 },
@@ -14,14 +14,19 @@ const weeklyConsumption = [
 const Rapports = () => {
   const [period, setPeriod] = useState<'7j' | '30j' | 'mois'>('7j');
   const [exportHint, setExportHint] = useState<string | null>(null);
+  const [coffeeUsers, setCoffeeUsers] = useState<CoffeeUser[]>([]);
 
+  useEffect(() => {
+    fetchUsers().then(setCoffeeUsers);
+  }, []);
+  
   const servedUsers = useMemo(
     () => coffeeUsers.filter((u) => u.status === 'Servi'),
     []
   );
 
   const totalCups = useMemo(
-    () => servedUsers.reduce((sum, u) => sum + u.cupsToday, 0),
+    () => servedUsers.reduce((sum, u) => sum + Number(u.cupsToday), 0),
     [servedUsers]
   );
 
@@ -31,7 +36,7 @@ const Rapports = () => {
       const cur = map.get(u.coffeeType) ?? { clients: 0, tasses: 0 };
       map.set(u.coffeeType, {
         clients: cur.clients + 1,
-        tasses: cur.tasses + u.cupsToday,
+        tasses: cur.tasses + Number(u.cupsToday),
       });
     }
     return [...map.entries()]
@@ -52,13 +57,11 @@ const Rapports = () => {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <section className="w-full min-h-screen overflow-x-hidden space-y-6 p-4 sm:p-8 lg:ml-64">    
+    <div className="flex flex-col gap-4 rounded-2xl border border-orange-900/20 bg-white text-black p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)] sm:flex-row sm:items-center sm:justify-between">
+         
         <div>
           <h1 className="text-black 2xl font-semibold text-black orange-900">Rapports</h1>
-          <p className="mt-1 text-black sm text-black orange-900/75">
-            Synthèse des ventes et consommation — {periodLabel}
-          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {(
@@ -91,22 +94,22 @@ const Rapports = () => {
       ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-2xl border border-orange-900/20 bg-[#0f112d] p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+        <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
           <p className="text-black sm text-black orange-900">Tasses (période)</p>
           <p className="mt-2 text-black 3xl font-bold text-black [#FF5722]">{totalCups}</p>
           <p className="mt-2 text-black xs text-black orange-900/70">Données démo basées sur les clients servis</p>
         </article>
-        <article className="rounded-2xl border border-orange-900/20 bg-[#0f112d] p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+        <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
           <p className="text-black sm text-black orange-900">Clients servis</p>
           <p className="mt-2 text-black 3xl font-bold text-black [#FF5722]">{servedUsers.length}</p>
           <p className="mt-2 text-black xs text-black orange-900/70">Actifs sur la sélection</p>
         </article>
-        <article className="rounded-2xl border border-orange-900/20 bg-[#0f112d] p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+        <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
           <p className="text-black sm text-black orange-900">Moy. tasses / client</p>
           <p className="mt-2 text-black 3xl font-bold text-black [#FF5722]">{avgCupsPerClient}</p>
           <p className="mt-2 text-black xs text-black orange-900/70">Aujourd&apos;hui (jeu de données)</p>
         </article>
-        <article className="rounded-2xl border border-orange-900/20 bg-[#0f112d] p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+        <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
           <p className="text-black sm text-black orange-900">Pic semaine</p>
           <p className="mt-2 text-black 2xl font-bold text-black [#FF5722]">{maxWeeklyCups} tasses</p>
           <p className="mt-2 text-black xs text-black orange-900/70">Jour le plus chargé (aperçu hebdo)</p>
@@ -114,7 +117,7 @@ const Rapports = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <article className="rounded-2xl border border-orange-900/20 bg-[#0f112d] p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)] lg:col-span-3">
+        <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)] lg:col-span-3">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-black lg font-semibold text-black orange-900">Consommation hebdomadaire</h2>
             <span className="text-black xs text-black orange-900/80">Tasses / jour</span>
@@ -122,7 +125,7 @@ const Rapports = () => {
           <div className="flex h-56 items-end gap-3">
             {weeklyConsumption.map((item) => (
               <div key={item.day} className="flex flex-1 flex-col items-center gap-2">
-                <div className="flex h-44 w-full items-end overflow-hidden rounded-md bg-[#121435]">
+                <div className="flex h-44 w-full items-end overflow-hidden rounded-md bg-white">
                   <div
                     className="w-full rounded-md bg-gradient-to-t from-[#FF5722] to-[#ff8d6a]"
                     style={{ height: `${(item.cups / maxWeeklyCups) * 100}%` }}
@@ -134,7 +137,7 @@ const Rapports = () => {
           </div>
         </article>
 
-        <article className="rounded-2xl border border-orange-900/20 bg-[#0f112d] p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)] lg:col-span-2">
+        <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)] lg:col-span-2">
           <h2 className="mb-4 text-black lg font-semibold text-black orange-900">Exports</h2>
           <p className="mb-4 text-black sm text-black orange-900/75">
             Génère un fichier pour comptabilité ou analyse externe.
@@ -143,7 +146,7 @@ const Rapports = () => {
             <button
               type="button"
               onClick={() => showExportMsg('Export CSV')}
-              className="rounded-xl bg-[#FF5722] px-4 py-3 text-black sm font-semibold text-black [#121435] transition hover:bg-[#ff8d6a]"
+              className="rounded-xl bg-[#FF5722] px-4 py-3 text-black sm font-semibold text-black transition hover:bg-[#ff8d6a]"
             >
               Télécharger CSV (synthèse)
             </button>
@@ -158,7 +161,7 @@ const Rapports = () => {
         </article>
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-orange-900/20 bg-[#0f112d] shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+      <section className="overflow-hidden rounded-2xl border border-orange-900/20 bg-white shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
         <div className="flex items-center justify-between border-b border-orange-900/15 px-4 py-4">
           <h2 className="font-semibold text-black orange-900">Détail par type de boisson</h2>
           <span className="text-black xs text-black orange-900/75">{byCoffeeType.length} type(s)</span>
@@ -199,7 +202,7 @@ const Rapports = () => {
           </table>
         </div>
       </section>
-    </div>
+    </section>
   );
 };
 
