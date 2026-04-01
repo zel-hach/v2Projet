@@ -1,6 +1,6 @@
 export const adminProfile = {
-  fullName: 'Marie Dubois',
-  email: 'marie.dubois@coffeeshop.local',
+  fullName: 'Admin',
+  email: 'admin@example.com',
   role: 'Administrateur',
 } as const;
 
