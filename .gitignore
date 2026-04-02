@@ -1,1 +1,5 @@
 /back_end/node_modules
+
+# User uploads (large binaries; never commit)
+back_end/uploads/users/*
+!back_end/uploads/users/.gitkeep
