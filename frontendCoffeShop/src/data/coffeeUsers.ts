@@ -1,16 +1,25 @@
+import { API_BASE_URL } from './apiConfig';
+
+/** Compatible liste mock + API Mongo (champs optionnels selon la source). */
 export type CoffeeUser = {
-  id: number;
+  id?: number;
+  _id?: string;
   first_name: string;
   last_name: string;
-  age: number;
+  age?: number;
   email: string;
   phone: string;
   city: string;
-  status: string;
-  coffeeType: string;
-  cupsToday: string;
+  status?: string;
+  coffeeType?: string;
+  cupsToday?: string;
+  imageUrl?: string;
+  videoUrl?: string;
 };
 
+/** URL liste utilisateurs (recherche email côté API). */
+export const usersListUrl = (emailTerm: string) =>
+  `${API_BASE_URL}/api/users?emailTerm=${encodeURIComponent(emailTerm)}`;
 
 export const fetcher = async (url: string) => {
   const token = localStorage.getItem("token");
@@ -36,11 +45,11 @@ export const fetchUsers = async (): Promise<CoffeeUser[]> => {
   console.log("token: ",token);
   
   try {
-    const response = await fetch('http://localhost:7000/api/users', {
+    const response = await fetch(`${API_BASE_URL}/api/users`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`,
+        Authorization: token ? `Bearer ${token}` : '',
       },
     });
 
