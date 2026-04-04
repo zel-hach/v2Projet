@@ -1,7 +1,8 @@
 import { Modal, Button, Textarea, Group, Stack } from '@mantine/core';
 import type { CoffeeUser } from '../../../data/coffeeUsers';
 import { normalizePhoneForWhatsApp } from './userHelpers';
-import { darkModalClassNames, darkModalOverlayProps } from './darkModal';
+import { dashboardModalClassNames, dashboardModalOverlayProps } from './modalTheme';
+import { UserAvatarCircle } from './UserAvatarCircle';
 
 type WhatsAppModalProps = {
   opened: boolean;
@@ -14,7 +15,12 @@ type WhatsAppModalProps = {
 };
 
 const textareaStyles = {
-  input: { background: '#1e293b', color: 'white', borderColor: 'rgba(255,255,255,0.08)' },
+  label: { color: '#334155' },
+  input: {
+    background: '#ffffff',
+    color: '#0f172a',
+    borderColor: 'rgba(194, 65, 12, 0.2)',
+  },
 } as const;
 
 export function WhatsAppModal({
@@ -35,12 +41,31 @@ export function WhatsAppModal({
       centered
       withinPortal
       zIndex={9999}
-      title={<span className="text-xl font-bold text-white">Envoyer un message WhatsApp</span>}
-      overlayProps={darkModalOverlayProps}
-      classNames={darkModalClassNames}
+      title={<span className="text-xl font-bold text-slate-900">Envoyer un message WhatsApp</span>}
+      overlayProps={dashboardModalOverlayProps}
+      classNames={{
+        ...dashboardModalClassNames,
+        close: 'text-slate-600 hover:bg-orange-100/80',
+      }}
     >
       {user ? (
-        <Stack gap="sm">
+        <Stack gap="md">
+          <div className="flex items-center gap-3 rounded-xl border border-orange-900/15 bg-orange-200/50 p-4">
+            <UserAvatarCircle
+              imageUrl={user.imageUrl}
+              firstName={user.first_name}
+              lastName={user.last_name}
+              className="size-14"
+              initialsClassName="text-lg"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold text-slate-900">
+                {user.first_name} {user.last_name}
+              </p>
+              <p className="truncate text-sm text-slate-600">{user.phone || '—'}</p>
+            </div>
+          </div>
+
           <Textarea
             value={message}
             onChange={(e) => onMessageChange(e.target.value)}
@@ -50,10 +75,20 @@ export function WhatsAppModal({
           />
 
           <Group justify="flex-end" mt="xs">
-            <Button variant="default" onClick={onClose}>
+            <Button
+              variant="default"
+              onClick={onClose}
+              className="border-0 bg-blue-50 text-blue-600 ring-1 ring-blue-200 hover:bg-blue-100"
+            >
               Annuler
             </Button>
-            <Button color="orange" onClick={onSend} loading={loading} disabled={!phoneOk || !message.trim()}>
+            <Button
+              color="orange"
+              onClick={onSend}
+              loading={loading}
+              disabled={!phoneOk || !message.trim()}
+              className="bg-[#FF5722]"
+            >
               Envoyer
             </Button>
           </Group>

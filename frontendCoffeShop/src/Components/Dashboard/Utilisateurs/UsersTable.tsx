@@ -1,10 +1,12 @@
-import { Avatar } from '@mantine/core';
 import type { CoffeeUser } from '../../../data/coffeeUsers';
 import { getUserRowKey } from './userHelpers';
+import { UserAvatarCircle } from './UserAvatarCircle';
 
 type UsersTableProps = {
   users: CoffeeUser[];
   isLoading: boolean;
+  /** Si false (compte viewer), le bouton Supprimer est masqué. */
+  canDelete?: boolean;
   onEdit: (user: CoffeeUser) => void;
   onWhatsApp: (user: CoffeeUser) => void;
   onDelete: (user: CoffeeUser) => void;
@@ -13,6 +15,7 @@ type UsersTableProps = {
 export function UsersTable({
   users,
   isLoading,
+  canDelete = true,
   onEdit,
   onWhatsApp,
   onDelete,
@@ -62,7 +65,13 @@ export function UsersTable({
                 <tr key={getUserRowKey(user)} className={rowBase}>
                   <td className={tdLeft}>
                     <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10" />
+                      <UserAvatarCircle
+                        imageUrl={user.imageUrl}
+                        firstName={user.first_name}
+                        lastName={user.last_name}
+                        className="size-10"
+                        initialsClassName="text-xs"
+                      />
                       <div className="flex flex-col">
                         <span className="font-semibold text-slate-900">
                           {user.first_name} {user.last_name}
@@ -98,13 +107,15 @@ export function UsersTable({
                         Envoyer
                       </button>
 
-                      <button
-                        type="button"
-                        className="px-3 py-1.5 text-xs font-semibold rounded-md bg-red-50 text-red-600 ring-1 ring-red-200 hover:bg-red-100 transition"
-                        onClick={() => onDelete(user)}
-                      >
-                        Supprimer
-                      </button>
+                      {canDelete ? (
+                        <button
+                          type="button"
+                          className="px-3 py-1.5 text-xs font-semibold rounded-md bg-red-50 text-red-600 ring-1 ring-red-200 hover:bg-red-100 transition"
+                          onClick={() => onDelete(user)}
+                        >
+                          Supprimer
+                        </button>
+                      ) : null}
                     </div>
                   </td>
                 </tr>

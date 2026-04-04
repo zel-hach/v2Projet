@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './apiConfig';
+import type { VisitorListSegment } from './visitorSegments';
 
 /** Compatible liste mock + API Mongo (champs optionnels selon la source). */
 export type CoffeeUser = {
@@ -17,9 +18,9 @@ export type CoffeeUser = {
   videoUrl?: string;
 };
 
-/** URL liste utilisateurs (recherche email côté API). */
-export const usersListUrl = (emailTerm: string) =>
-  `${API_BASE_URL}/api/users?emailTerm=${encodeURIComponent(emailTerm)}`;
+/** URL liste utilisateurs (recherche + segment : all | investisseur | etudiant). */
+export const usersListUrl = (emailTerm: string, segment: VisitorListSegment = 'all') =>
+  `${API_BASE_URL}/api/users?emailTerm=${encodeURIComponent(emailTerm)}&segment=${encodeURIComponent(segment)}`;
 
 export const fetcher = async (url: string) => {
   const token = localStorage.getItem("token");
@@ -42,16 +43,18 @@ export const fetcher = async (url: string) => {
 
 export const fetchUsers = async (): Promise<CoffeeUser[]> => {
   const token = await localStorage.getItem("token");
-  console.log("token: ",token);
-  
+
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users`, {
+    const response = await fetch(
+      `${API_BASE_URL}/api/users?emailTerm=&segment=${encodeURIComponent('all')}`,
+      {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         Authorization: token ? `Bearer ${token}` : '',
       },
-    });
+    }
+    );
 
     const data = await response.json();
 

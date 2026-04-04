@@ -1,6 +1,8 @@
-import { Avatar, Modal, Button, TextInput, Group, Stack, Divider } from '@mantine/core';
+import { forwardRef } from 'react';
+import { Modal, Button, TextInput, Select } from '@mantine/core';
 import { RiCameraAiFill } from 'react-icons/ri';
-import { darkModalClassNames, darkModalOverlayProps } from './darkModal';
+import { dashboardModalClassNames, dashboardModalOverlayProps } from './modalTheme';
+import { UserAvatarCircle } from './UserAvatarCircle';
 
 export type EditUserForm = {
   first_name: string;
@@ -8,6 +10,7 @@ export type EditUserForm = {
   email: string;
   phone: string;
   city: string;
+  status: string;
 };
 
 type EditUserModalProps = {
@@ -15,8 +18,8 @@ type EditUserModalProps = {
   onClose: () => void;
   form: EditUserForm;
   onFormChange: (next: EditUserForm) => void;
+  profileSelectData: { value: string; label: string }[];
   imagePreview: string | null;
-  /** Image déjà enregistrée sur le serveur (URL absolue). */
   existingImageUrl?: string | null;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   videoPreview: string | null;
@@ -25,20 +28,59 @@ type EditUserModalProps = {
   onSubmit: (e: React.FormEvent) => void;
   submitting?: boolean;
   submitError?: string | null;
-  /** Erreur locale (ex. vidéo trop longue / trop lourde). */
   videoError?: string | null;
 };
 
+/** Largeur / hauteur fixes — pas de défilement dans la modale. */
+export const EDIT_MODAL_WIDTH = 640;
+export const EDIT_MODAL_HEIGHT = 820;
+
+const ModalBodyNoScroll = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  function ModalBodyNoScroll({ children, style, ...props }, ref) {
+    return (
+      <div
+        ref={ref}
+        {...props}
+        style={{
+          ...style,
+          overflow: 'hidden',
+          maxHeight: 'none',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {children}
+      </div>
+    );
+  }
+);
+
 const inputStyles = {
-  label: { color: '#cbd5e1' },
-  input: { background: '#1e293b', color: 'white', borderColor: 'rgba(255,255,255,0.08)' },
+  label: { color: '#334155' },
+  input: {
+    background: '#ffffff',
+    color: '#0f172a',
+    borderColor: 'rgba(194, 65, 12, 0.2)',
+  },
 } as const;
+
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 py-0.5">
+      <div className="h-px flex-1 bg-orange-900/15" />
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{label}</span>
+      <div className="h-px flex-1 bg-orange-900/15" />
+    </div>
+  );
+}
 
 export function EditUserModal({
   opened,
   onClose,
   form,
   onFormChange,
+  profileSelectData,
   imagePreview,
   existingImageUrl,
   onImageChange,
@@ -57,105 +99,181 @@ export function EditUserModal({
     <Modal
       opened={opened}
       onClose={onClose}
-      centered
+      centered={false}
       withinPortal
       zIndex={9999}
-      title={<span className="text-xl font-bold text-white">Mettre à jour l’utilisateur</span>}
-      overlayProps={darkModalOverlayProps}
-      classNames={darkModalClassNames}
+      padding={0}
+      lockScroll
+      yOffset="0.5rem"
+      xOffset="0.5rem"
+      scrollAreaComponent={ModalBodyNoScroll}
+      title={<span className="text-lg font-bold text-slate-900">Mettre à jour l’utilisateur</span>}
+      overlayProps={dashboardModalOverlayProps}
+      transitionProps={{ transition: 'fade-down', duration: 180 }}
+      classNames={{
+        ...dashboardModalClassNames,
+        close: 'text-slate-600 hover:bg-orange-100/80',
+        content: `${dashboardModalClassNames.content} !overflow-hidden !p-0`,
+        body: `${dashboardModalClassNames.body} !overflow-hidden !p-0 !max-h-none`,
+        header: `${dashboardModalClassNames.header} !shrink-0 !py-3 !px-5`,
+      }}
+      styles={{
+        inner: {
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          paddingTop: 'max(0.25rem, env(safe-area-inset-top))',
+          paddingBottom: '0.5rem',
+          paddingInline: 'max(0.5rem, env(safe-area-inset-left))',
+        },
+        content: {
+          width: `min(${EDIT_MODAL_WIDTH}px, calc(100vw - 1rem))`,
+          height: `min(${EDIT_MODAL_HEIGHT}px, calc(100dvh - max(0.5rem, env(safe-area-inset-top)) - 0.75rem))`,
+          maxWidth: EDIT_MODAL_WIDTH,
+          maxHeight: `min(${EDIT_MODAL_HEIGHT}px, calc(100dvh - max(0.5rem, env(safe-area-inset-top)) - 0.75rem))`,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+        },
+        body: {
+          flex: 1,
+          minHeight: 0,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: 'none',
+        },
+      }}
     >
-      <form onSubmit={onSubmit}>
-        <Stack gap="md">
-          <Group justify="center">
-            <div className="relative">
-              <div className="w-40 h-40 rounded-full overflow-hidden border border-white/20 flex items-center justify-center">
-                {displayImage ? (
-                  <img src={displayImage} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <Avatar style={{ width: '10rem', height: '10rem' }} />
-                )}
-              </div>
-              <label className="absolute -bottom-2 right-2 cursor-pointer px-2 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition shadow">
-                <RiCameraAiFill />
-                <input type="file" accept="image/*" onChange={onImageChange} className="hidden" />
-              </label>
-            </div>
-          </Group>
+      <form
+        onSubmit={onSubmit}
+        className="flex h-full min-h-0 flex-col overflow-hidden bg-white"
+      >
+        {/* Haut : image */}
+        <div className="flex shrink-0 flex-col items-center gap-2 border-b border-orange-900/10 bg-white px-5 pb-3 pt-3">
+          <div className="relative">
+            <UserAvatarCircle
+              imageUrl={displayImage}
+              firstName={form.first_name}
+              lastName={form.last_name}
+              className="h-36 w-36"
+              initialsClassName="text-3xl"
+            />
+            <label className="absolute -bottom-1 -right-1 cursor-pointer rounded-lg bg-[#FF5722] p-2 text-white shadow transition hover:bg-orange-600">
+              <RiCameraAiFill className="size-4" />
+              <input type="file" accept="image/*" onChange={onImageChange} className="hidden" />
+            </label>
+          </div>
+          <p className="text-center text-[11px] text-slate-500">Cliquez sur l’icône pour changer la photo</p>
+        </div>
 
-          <Divider label="Informations" labelPosition="center" />
-
-          <Group grow>
+        {/* Sous l’image : toutes les informations (sans scroll) */}
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-5 py-2">
+          <SectionDivider label="Informations" />
+          <div className="grid min-h-0 shrink-0 grid-cols-1 gap-x-3 gap-y-2 sm:grid-cols-2">
             <TextInput
+              size="xs"
               label="Prénom"
               value={form.first_name}
               onChange={(e) => onFormChange({ ...form, first_name: e.target.value })}
               styles={inputStyles}
             />
             <TextInput
+              size="xs"
               label="Nom"
               value={form.last_name}
               onChange={(e) => onFormChange({ ...form, last_name: e.target.value })}
               styles={inputStyles}
             />
-          </Group>
-
-          <TextInput
-            label="Email"
-            value={form.email}
-            onChange={(e) => onFormChange({ ...form, email: e.target.value })}
-            styles={inputStyles}
-          />
-
-          <Group grow>
+            <div className="sm:col-span-2">
+              <TextInput
+                size="xs"
+                label="Email"
+                value={form.email}
+                onChange={(e) => onFormChange({ ...form, email: e.target.value })}
+                styles={inputStyles}
+              />
+            </div>
             <TextInput
+              size="xs"
               label="Téléphone"
               value={form.phone}
               onChange={(e) => onFormChange({ ...form, phone: e.target.value })}
               styles={inputStyles}
             />
             <TextInput
+              size="xs"
               label="Ville"
               value={form.city}
               onChange={(e) => onFormChange({ ...form, city: e.target.value })}
               styles={inputStyles}
             />
-          </Group>
-
-          <Divider label="Médias" labelPosition="center" />
-
-          <div>
-            <div className="text-sm text-slate-300 mb-2">Vidéo (optionnel)</div>
-            <input
-              type="file"
-              accept="video/*"
-              onChange={onVideoChange}
-              className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-white/10 text-white"
-            />
-            {displayVideo ? (
-              <video src={displayVideo} className="mt-3 w-full rounded-lg border border-white/10" controls />
-            ) : null}
-            {videoError ? (
-              <div className="mt-2 text-sm text-red-300" role="alert">
-                {videoError}
-              </div>
-            ) : null}
+            <div className="sm:col-span-2">
+              <Select
+                size="xs"
+                label="Profil visiteur"
+                placeholder="Choisir…"
+                data={profileSelectData}
+                value={form.status || null}
+                onChange={(v) => onFormChange({ ...form, status: v ?? '' })}
+                searchable
+                clearable
+                styles={{
+                  ...inputStyles,
+                  input: { ...inputStyles.input, height: 'auto', minHeight: 30 },
+                  dropdown: { background: '#ffffff', borderColor: 'rgba(194, 65, 12, 0.2)' },
+                  option: { color: '#0f172a' },
+                }}
+              />
+            </div>
           </div>
+          {submitError ? <div className="shrink-0 text-xs text-red-600">{submitError}</div> : null}
+        </div>
 
-          {submitError ? (
-            <div className="text-sm text-red-300">
-              {submitError}
+        {/* Bas : upload + aperçu vidéo */}
+        <div className="shrink-0 border-t border-orange-900/20 bg-orange-200/50 px-5 py-3">
+          <SectionDivider label="Vidéo (optionnel)" />
+          <input
+            type="file"
+            accept="video/*"
+            onChange={onVideoChange}
+            className="mt-2 w-full rounded-lg border border-orange-900/20 bg-white px-2 py-1.5 text-xs text-slate-900 file:mr-2 file:rounded file:border-0 file:bg-blue-50 file:px-2 file:py-1 file:text-xs file:font-medium file:text-blue-600"
+          />
+          {displayVideo ? (
+            <video
+              src={displayVideo}
+              className="mt-2 h-40 w-full rounded-lg border border-orange-900/20 bg-black/5 object-contain"
+              controls
+            />
+          ) : null}
+          {videoError ? (
+            <div className="mt-1 text-xs text-red-600" role="alert">
+              {videoError}
             </div>
           ) : null}
+        </div>
 
-          <Group justify="flex-end" mt="xs">
-            <Button variant="default" type="button" onClick={onClose} disabled={submitting}>
-              Annuler
-            </Button>
-            <Button type="submit" color="orange" loading={submitting} disabled={Boolean(videoError)}>
-              Enregistrer
-            </Button>
-          </Group>
-        </Stack>
+        <div className="flex shrink-0 justify-end gap-2 border-t border-orange-900/15 bg-white px-5 py-3">
+          <Button
+            variant="default"
+            type="button"
+            size="xs"
+            onClick={onClose}
+            disabled={submitting}
+            className="border-0 bg-blue-50 text-blue-600 ring-1 ring-blue-200 hover:bg-blue-100"
+          >
+            Annuler
+          </Button>
+          <Button
+            type="submit"
+            size="xs"
+            color="orange"
+            loading={submitting}
+            disabled={Boolean(videoError)}
+            className="bg-[#FF5722]"
+          >
+            Enregistrer
+          </Button>
+        </div>
       </form>
     </Modal>
   );

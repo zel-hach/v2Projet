@@ -14,8 +14,27 @@ import {
   getVideoDurationSeconds,
   validateVideoSize,
 } from '../../data/videoValidation';
+import {
+  VISITOR_PROFILE_OPTIONS,
+  type VisitorListSegment,
+} from '../../data/visitorSegments';
 
-const Utilisateurs = () => {
+const PROFILE_SELECT_DATA = VISITOR_PROFILE_OPTIONS.map((o) => ({
+  value: o.value,
+  label: `${o.group} · ${o.value}`,
+}));
+
+const LIST_TITLES: Record<VisitorListSegment, string> = {
+  all: 'Tous les visiteurs',
+  investisseur: 'Les investisseurs',
+  etudiant: 'Les étudiants',
+};
+
+type UtilisateursProps = { listFilter: VisitorListSegment };
+
+const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
+  const isAdmin = typeof window !== 'undefined' && localStorage.getItem('userRole') === 'admin';
+
   const [search, setSearch] = useState('');
   const [coffeeUsers, setCoffeeUsers] = useState<CoffeeUser[]>([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -40,9 +59,13 @@ const Utilisateurs = () => {
     email: '',
     phone: '',
     city: '',
+    status: '',
   });
 
-  const { data, isLoading, mutate } = useSWR<CoffeeUser[]>(usersListUrl(search), fetcher);
+  const { data, isLoading, mutate } = useSWR<CoffeeUser[]>(
+    usersListUrl(search, listFilter),
+    fetcher
+  );
 
   const selectedUserId = useMemo(() => (selectedUser ? getUserId(selectedUser) : null), [selectedUser]);
 
@@ -79,6 +102,7 @@ const Utilisateurs = () => {
         email: selectedUser.email,
         phone: selectedUser.phone ?? '',
         city: selectedUser.city ?? '',
+        status: selectedUser.status ?? '',
       });
     }
   }, [selectedUser]);
@@ -161,6 +185,7 @@ const Utilisateurs = () => {
     formData.append('email', form.email);
     formData.append('phone', form.phone);
     formData.append('city', form.city);
+    formData.append('status', form.status ?? '');
 
     setEditError(null);
     setEditSaving(true);
@@ -252,7 +277,7 @@ const Utilisateurs = () => {
     <>
       <section className="w-full min-h-screen overflow-hidden space-y-2 p-4 sm:p-8 lg:ml-64">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-4xl font-semibold text-orange-900">Liste des utilisateurs servis</h1>
+          <h1 className="text-4xl font-semibold text-orange-900">{LIST_TITLES[listFilter]}</h1>
         </div>
         <div className="w-full h-1 bg-orange-900/20" />
 
@@ -276,6 +301,7 @@ const Utilisateurs = () => {
           <UsersTable
             users={coffeeUsers}
             isLoading={isLoading}
+            canDelete={isAdmin}
             onEdit={(user) => {
               setSelectedUser(user);
               setVideoError(null);
@@ -297,6 +323,7 @@ const Utilisateurs = () => {
           }}
           form={form}
           onFormChange={setForm}
+          profileSelectData={PROFILE_SELECT_DATA}
           imagePreview={imagePreview}
           existingImageUrl={existingImageUrl}
           onImageChange={handleImageChange}

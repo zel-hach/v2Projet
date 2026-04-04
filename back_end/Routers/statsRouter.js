@@ -1,9 +1,9 @@
 import express from "express";
 import { requireAdminOrViewer } from "../middlewares/authMiddleware.js";
-import { postSendWhatsApp } from "../controllers/whatsappController.js";
+import { getDashboardStats } from "../controllers/statsController.js";
 
 const router = express.Router();
 
-router.post("/send", requireAdminOrViewer, postSendWhatsApp);
+router.get("/dashboard", requireAdminOrViewer, getDashboardStats);
 
 export default router;

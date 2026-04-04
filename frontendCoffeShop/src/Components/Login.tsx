@@ -3,6 +3,7 @@
 
 import React, { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { persistSessionFromLogin } from '../data/sessionUser';
 
 interface FieldProps {
   id: string;
@@ -82,7 +83,13 @@ const Login: React.FC = () => {
     if (data.token) {
       localStorage.setItem('token', data.token);
     }
-    navigate('/dashboard/utilisateurs');
+    persistSessionFromLogin({
+      first_name: data.first_name,
+      last_name: data.last_name,
+      email: data.email,
+      role: data.role,
+    });
+    navigate('/dashboard/visiteurs');
 
   } catch (error: any) {
     console.error('Error:', error.message);

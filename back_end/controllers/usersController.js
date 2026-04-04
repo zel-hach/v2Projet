@@ -1,11 +1,37 @@
 import mongoose from "mongoose";
 import User from "../models/User.js";
 
+function escapeRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Correspondance insensible à la casse sur le champ `status`. */
+function statusMatchesAny(values) {
+  return {
+    $or: values.map((v) => ({
+      status: new RegExp(`^${escapeRegex(v)}$`, "i"),
+    })),
+  };
+}
+
 export async function getUsers(req, res) {
   try {
     const query = req.query;
     const emailTerm = query.emailTerm || "";
-    const users = await User.find({ email: { $regex: emailTerm, $options: "i" } });
+    const segment = String(query.segment || "all").toLowerCase();
+
+    const andParts = [
+      { email: { $regex: emailTerm, $options: "i" } },
+      { $nor: [{ role: "admin" }, { role: "viewer" }] },
+    ];
+
+    if (segment === "investisseur") {
+      andParts.push(statusMatchesAny(["fonctionnaire", "cto", "entrepreneur"]));
+    } else if (segment === "etudiant") {
+      andParts.push(statusMatchesAny(["titulaire", "étudiant", "etudiant"]));
+    }
+
+    const users = await User.find({ $and: andParts }).select("-password");
     res.status(200).json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -26,6 +52,15 @@ export async function updateUser(req, res) {
       phone: req.body.phone,
       city: req.body.city,
     };
+    if (typeof req.body.status === "string") {
+      updates.status = req.body.status;
+    }
+    if (req.body.cupsToday !== undefined && req.body.cupsToday !== "") {
+      const n = Number(req.body.cupsToday);
+      if (!Number.isNaN(n) && n >= 0) {
+        updates.cupsToday = Math.floor(n);
+      }
+    }
 
     const files = req.files;
     if (files?.image?.[0]) {

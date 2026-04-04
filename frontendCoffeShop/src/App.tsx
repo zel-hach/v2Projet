@@ -1,10 +1,8 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './Components/LandingPage';
 import Dashboard from './Components/Dashboard';
 import BodyDashboard from './Components/BodyDashboard';
 import Utilisateurs from './Components/Dashboard/Utilisateurs';
-import Rapports from './Components/Dashboard/Rapports';
-import Parametres from './Components/Dashboard/Parametres';
 
 function App() {
   return (
@@ -13,9 +11,10 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/dashboard" element={<Dashboard />}>
           <Route index element={<BodyDashboard />} />
-          <Route path="utilisateurs" element={<Utilisateurs />} />
-          <Route path="rapports" element={<Rapports />} />
-          <Route path="parametres" element={<Parametres />} />
+          <Route path="utilisateurs" element={<Navigate to="/dashboard/visiteurs" replace />} />
+          <Route path="visiteurs" element={<Utilisateurs listFilter="all" />} />
+          <Route path="investisseurs" element={<Utilisateurs listFilter="investisseur" />} />
+          <Route path="etudiants" element={<Utilisateurs listFilter="etudiant" />} />
         </Route>
       </Routes>
     </BrowserRouter>

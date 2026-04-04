@@ -1,169 +1,184 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {  fetchUsers, type CoffeeUser } from '../data/coffeeUsers';
-import { adminProfile } from '../data/adminProfile';
+import { fetchUsers, type CoffeeUser } from '../data/coffeeUsers';
+import { fetchDashboardStats, type DashboardStats } from '../data/dashboardApi';
+import { getSessionShortName } from '../data/sessionUser';
 
 const BodyDashboard = () => {
-    const [search] = useState('');
-    const [coffeeUsers, setCoffeeUsers] = useState<CoffeeUser[]>([]);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [coffeeUsers, setCoffeeUsers] = useState<CoffeeUser[]>([]);
 
-    useEffect(() => {
-      fetchUsers().then(setCoffeeUsers);
-    }, []); 
-    const servedUsers = useMemo(
-        () =>
-          coffeeUsers.filter(
-            (user) =>
-              user.status === 'Servi' &&
-              (user.first_name.toLowerCase().includes(search.toLowerCase()) ||
-                user.last_name.toLowerCase().includes(search.toLowerCase()) ||
-                user.email.toLowerCase().includes(search.toLowerCase()))
-          ),
-        [search]
-      );
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [s, users] = await Promise.all([fetchDashboardStats(), fetchUsers()]);
+      if (!cancelled) {
+        setStats(s);
+        setCoffeeUsers(users);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-    const totalCups = servedUsers.reduce((sum, user) => sum + Number(user.cupsToday), 0);
-    const espressoUsers = servedUsers.filter((user) => user.coffeeType === 'Espresso').length;
-    const cappuccinoUsers = servedUsers.filter((user) => user.coffeeType === 'Cappuccino').length;
-    const latteUsers = servedUsers.filter((user) => user.coffeeType === 'Latte').length;
+  const espressoUsers = useMemo(
+    () => coffeeUsers.filter((u) => (u.coffeeType || '').toLowerCase() === 'espresso').length,
+    [coffeeUsers]
+  );
+  const cappuccinoUsers = useMemo(
+    () => coffeeUsers.filter((u) => (u.coffeeType || '').toLowerCase() === 'cappuccino').length,
+    [coffeeUsers]
+  );
+  const latteUsers = useMemo(
+    () => coffeeUsers.filter((u) => (u.coffeeType || '').toLowerCase() === 'latte').length,
+    [coffeeUsers]
+  );
 
-    const weeklyConsumption = [
-        { day: 'Lun', cups: 6 },
-        { day: 'Mar', cups: 9 },
-        { day: 'Mer', cups: 7 },
-        { day: 'Jeu', cups: 11 },
-        { day: 'Ven', cups: 8 },
-        { day: 'Sam', cups: 4 },
-        { day: 'Dim', cups: 3 },
-      ];
-    const maxWeeklyCups = Math.max(...weeklyConsumption.map((item) => item.cups));
-    const topCoffeeShare = servedUsers.length > 0 ? Math.round((latteUsers / servedUsers.length) * 100) : 0;
+  const maxTypeCount = Math.max(espressoUsers, cappuccinoUsers, latteUsers, 1);
+  const totalTyped = espressoUsers + cappuccinoUsers + latteUsers;
+  const topCoffeeShare =
+    totalTyped > 0 ? Math.round((Math.max(espressoUsers, cappuccinoUsers, latteUsers) / totalTyped) * 100) : 0;
 
-   
-    const firstName = adminProfile.fullName.split(/\s+/)[0] ?? adminProfile.fullName;
+  const cupsByDay = stats?.cupsByDay ?? [];
+  const maxWeeklyCups = Math.max(1, ...cupsByDay.map((d) => d.cups));
 
-    return (
-<section className="w-full min-h-screen overflow-x-hidden space-y-6 p-4 sm:p-8 lg:ml-64">    
-      <div className="flex flex-col gap-4 rounded-2xl border border-orange-900/20 bg-white text-black p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)] sm:flex-row sm:items-center sm:justify-between">
-        <div>
-                  <h1 className="text-xl font-semibold text-black sm:text-2xl">
-                    Bonjour, {firstName}
-                  </h1>
-                  
-                </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              to="utilisateurs"
-              className="rounded-xl bg-[#FF5722] px-4 py-2.5 text-sm font-semibold text-[#121435] shadow-[0_8px_20px_rgba(255,87,34,0.3)] transition hover:bg-[#ff8d6a]"
-            >
-              Utilisateurs
-            </Link>
-            <Link
-              to="rapports"
-              className="rounded-xl border border-orange-900/30 px-4 py-2.5 text-sm font-medium text-orange-900 transition hover:bg-orange-900/10"
-            >
-              Rapports
-            </Link>
-            <Link
-              to="parametres"
-              className="rounded-xl border border-orange-900/30 px-4 py-2.5 text-sm font-medium text-orange-900 transition hover:bg-orange-900/10"
-            >
-              Paramètres
-            </Link>
+  const todayCups = cupsByDay.length > 0 ? cupsByDay[cupsByDay.length - 1].cups : 0;
+
+  const firstName = getSessionShortName();
+
+  const investisseurCount = stats?.investisseurCount ?? '—';
+  const etudiantCount = stats?.etudiantCount ?? '—';
+  const visiteurCount = stats?.visiteurCount ?? '—';
+  const totalCups = stats?.totalCups ?? '—';
+
+  return (
+    <section className="w-full min-h-screen overflow-x-hidden space-y-6 p-4 sm:p-8 lg:ml-64">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+          <h1 className="mt-1 text-lg text-orange-900/70">Bonjour, {firstName}</h1>
+        </div>    
+      </div>
+      <div className="w-full h-1 bg-orange-900/20" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+          <p className="text-orange-900 text-sm">Investisseurs</p>
+          <p className="text-3xl font-bold text-[#FF5722] mt-2">{investisseurCount}</p>
+          <p className="text-xs text-orange-900/70 mt-2">Fonctionnaire, CTO, entrepreneur</p>
+        </article>
+        <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+          <p className="text-orange-900 text-sm">Étudiants</p>
+          <p className="text-3xl font-bold text-[#FF5722] mt-2">{etudiantCount}</p>
+          <p className="text-xs text-orange-900/70 mt-2">Titulaire, étudiant</p>
+        </article>
+        <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+          <p className="text-orange-900 text-sm">Visiteurs</p>
+          <p className="text-3xl font-bold text-[#FF5722] mt-2">{visiteurCount}</p>
+          <p className="text-xs text-orange-900/70 mt-2">Tous profils (hors comptes admin)</p>
+        </article>
+        <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+          <p className="text-orange-900 text-sm">Total tasses</p>
+          <p className="text-3xl font-bold text-[#FF5722] mt-2">{totalCups}</p>
+          <p className="text-xs text-orange-900/70 mt-2">Somme sur les 7 derniers jours</p>
+        </article>
+        <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
+          <p className="text-orange-900 text-sm">Tasses aujourd’hui</p>
+          <p className="text-3xl font-bold text-[#FF5722] mt-2">{stats ? todayCups : '—'}</p>
+          <p className="text-xs text-orange-900/70 mt-2">Somme des « tasses » par visiteur</p>
+        </article>
+      </div>
+
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-5 lg:h-[600px] lg:items-stretch">
+        <article className="flex min-h-[320px] flex-col rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)] lg:col-span-3 lg:h-full lg:min-h-0">
+          <div className="flex shrink-0 items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-orange-900">Tasses par jour</h2>
+            <span className="text-xs text-orange-900/80">7 derniers jours</span>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
-            <p className="text-orange-900 text-sm">Users servis</p>
-            <p className="text-3xl font-bold text-[#FF5722] mt-2">{servedUsers.length}</p>
-            <p className="text-xs text-orange-900/70 mt-2">+8% vs hier</p>
-          </article>
-          <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
-            <p className="text-orange-900 text-sm">Tasses aujourd'hui</p>
-            <p className="text-3xl font-bold text-[#FF5722] mt-2">{totalCups}</p>
-            <p className="text-xs text-orange-900/70 mt-2">Pic a 10:00 - 11:00</p>
-          </article>
-          <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
-            <p className="text-orange-900 text-sm">Type le plus demande</p>
-            <p className="text-2xl font-bold text-[#FF5722] mt-2">Latte</p>
-            <p className="text-xs text-orange-900/70 mt-2">{topCoffeeShare}% des commandes</p>
-          </article>
-          <article className="rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
-            <p className="text-orange-900 text-sm">Satisfaction</p>
-            <p className="text-3xl font-bold text-[#FF5722] mt-2">4.8/5</p>
-            <p className="text-xs text-orange-900/70 mt-2">Basee sur 124 avis</p>
-          </article>
-        </div>
-
-        <section className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-          <article className="lg:col-span-3 rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-orange-900">Consommation hebdomadaire</h2>
-              <span className="text-xs text-orange-900/80">Tasses par jour</span>
-            </div>
-
-            <div className="flex items-end gap-3 h-56">
-              {weeklyConsumption.map((item) => (
-                <div key={item.day} className="flex-1 flex flex-col items-center gap-2">
-                  <div className="w-full rounded-md bg-white h-44 flex items-end overflow-hidden">
-                    <div
-                      className="w-full rounded-md bg-gradient-to-t from-[#FF5722] to-[#ff8d6a]"
-                      style={{
-                        height: `${(item.cups / maxWeeklyCups) * 100}%`,
-                      }}
-                    />
+          <div className="mt-4 flex min-h-0 flex-1 flex-col">
+            {cupsByDay.length === 0 ? (
+              <div className="flex flex-1 items-center justify-center">
+                <p className="text-sm text-orange-900/60">Chargement des statistiques…</p>
+              </div>
+            ) : (
+              <div className="flex min-h-0 flex-1 items-stretch gap-2 sm:gap-3">
+                {cupsByDay.map((item) => (
+                  <div
+                    key={item.dayKey}
+                    className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-end gap-2"
+                  >
+                    <div className="flex min-h-[120px] w-full flex-1 flex-col justify-end rounded-md border border-orange-900/10 bg-orange-50/40">
+                      <div
+                        className="w-full rounded-md bg-gradient-to-t from-[#FF5722] to-[#ff8d6a] transition-all"
+                        style={{
+                          height: `${(item.cups / maxWeeklyCups) * 100}%`,
+                          minHeight: item.cups > 0 ? '6px' : '0',
+                        }}
+                        title={`${item.dayKey}: ${item.cups}`}
+                      />
+                    </div>
+                    <span className="shrink-0 text-center text-[10px] leading-tight text-orange-900/80 sm:text-xs">
+                      {item.label}
+                    </span>
+                    <span className="shrink-0 text-[10px] font-semibold text-[#FF5722]">{item.cups}</span>
                   </div>
-                  <span className="text-xs text-orange-900/80">{item.day}</span>
-                </div>
-              ))}
-            </div>
-          </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </article>
 
-          <article className="lg:col-span-2 rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)]">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-orange-900">Repartition des cafes</h2>
-              <span className="text-xs text-orange-900/80">Top des boissons</span>
-            </div>
+        <article className="flex min-h-[280px] flex-col rounded-2xl border border-orange-900/20 bg-white p-5 shadow-[0_12px_30px_rgba(7,8,20,0.45)] lg:col-span-2 lg:h-full lg:min-h-0">
+          <div className="flex shrink-0 items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-orange-900">Répartition des cafés</h2>
+            <span className="text-xs text-orange-900/80">Par type déclaré</span>
+          </div>
 
-            <div className="space-y-4 mt-2">
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Latte</span>
-                  <span className="text-[#FF5722]">{latteUsers}</span>
-                </div>
-                <div className="h-2 rounded-full bg-[#121435]">
-                  <div className="h-2 rounded-full bg-[#FF5722] w-[70%]" />
-                </div>
+          <div className="mt-4 flex min-h-0 flex-1 flex-col justify-center gap-6">
+            <div>
+              <div className="mb-2 flex justify-between text-sm">
+                <span>Latte</span>
+                <span className="text-[#FF5722]">{latteUsers}</span>
               </div>
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Espresso</span>
-                  <span className="text-[#FF5722]">{espressoUsers}</span>
-                </div>
-                <div className="h-2 rounded-full bg-[#121435]">
-                  <div className="h-2 rounded-full bg-[#ff8d6a] w-[45%]" />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Cappuccino</span>
-                  <span className="text-[#FF5722]">{cappuccinoUsers}</span>
-                </div>
-                <div className="h-2 rounded-full bg-[#121435]">
-                  <div className="h-2 rounded-full bg-[#ffc2ae] w-[35%]" />
-                </div>
+              <div className="h-2 rounded-full bg-[#121435]/15">
+                <div
+                  className="h-2 rounded-full bg-[#FF5722]"
+                  style={{ width: `${(latteUsers / maxTypeCount) * 100}%` }}
+                />
               </div>
             </div>
-            <div className="mt-6 grid grid-cols-3 gap-2 text-xs">
-              <div className="rounded-lg bg-[#121435] p-2 text-center text-orange-900">Latte 70%</div>
-              <div className="rounded-lg bg-[#121435] p-2 text-center text-orange-900">Esp 45%</div>
-              <div className="rounded-lg bg-[#121435] p-2 text-center text-orange-900">Cap 35%</div>
+            <div>
+              <div className="mb-2 flex justify-between text-sm">
+                <span>Espresso</span>
+                <span className="text-[#FF5722]">{espressoUsers}</span>
+              </div>
+              <div className="h-2 rounded-full bg-[#121435]/15">
+                <div
+                  className="h-2 rounded-full bg-[#ff8d6a]"
+                  style={{ width: `${(espressoUsers / maxTypeCount) * 100}%` }}
+                />
+              </div>
             </div>
-          </article>
-        </section>
+            <div>
+              <div className="mb-2 flex justify-between text-sm">
+                <span>Cappuccino</span>
+                <span className="text-[#FF5722]">{cappuccinoUsers}</span>
+              </div>
+              <div className="h-2 rounded-full bg-[#121435]/15">
+                <div
+                  className="h-2 rounded-full bg-[#ffc2ae]"
+                  style={{ width: `${(cappuccinoUsers / maxTypeCount) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          <p className="mt-auto shrink-0 border-t border-orange-900/10 pt-4 text-xs text-orange-900/70">
+            Part du type le plus fréquent : {topCoffeeShare}% (sur visiteurs avec type renseigné)
+          </p>
+        </article>
       </section>
-    );
-}
+    </section>
+  );
+};
 
 export default BodyDashboard;

@@ -1,6 +1,7 @@
 import { Modal, Button, Group, Stack } from '@mantine/core';
 import type { CoffeeUser } from '../../../data/coffeeUsers';
-import { darkModalClassNames, darkModalOverlayProps } from './darkModal';
+import { dashboardModalClassNames, dashboardModalOverlayProps } from './modalTheme';
+import { UserAvatarCircle } from './UserAvatarCircle';
 
 type DeleteUserModalProps = {
   opened: boolean;
@@ -17,9 +18,6 @@ export function DeleteUserModal({
   onConfirmDelete,
   loading,
 }: DeleteUserModalProps) {
-  const initials =
-    user ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase() : '';
-
   return (
     <Modal
       opened={opened && !!user}
@@ -27,31 +25,51 @@ export function DeleteUserModal({
       centered
       withinPortal
       zIndex={9999}
-      title={<span className="text-xl font-bold text-white">Supprimer utilisateur</span>}
-      overlayProps={darkModalOverlayProps}
-      classNames={darkModalClassNames}
+      title={<span className="text-xl font-bold text-slate-900">Supprimer utilisateur</span>}
+      overlayProps={dashboardModalOverlayProps}
+      classNames={{
+        ...dashboardModalClassNames,
+        close: 'text-slate-600 hover:bg-orange-100/80',
+      }}
     >
       {user ? (
         <Stack gap="md">
-
-          <div className="w-full rounded-xl border border-orange-500 bg-[#1e293b] p-4">
-            <div className="text-sm text-white">
-              Voulez-vous vraiment supprimer{' '}
-              <span className="font-semibold text-white">
-                {user.first_name} {user.last_name}
-              </span>{' '}
-              ?
-            </div>
-            <div className="mt-2 text-xs text-white">
-              Cette action est <span className="font-semibold text-orange-800">irréversible</span>.
+          <div className="flex items-start gap-3 rounded-xl border border-orange-900/20 bg-orange-200/50 p-4">
+            <UserAvatarCircle
+              imageUrl={user.imageUrl}
+              firstName={user.first_name}
+              lastName={user.last_name}
+              className="size-14"
+              initialsClassName="text-lg"
+            />
+            <div className="min-w-0 flex-1 text-sm text-slate-900">
+              <p>
+                Voulez-vous vraiment supprimer{' '}
+                <span className="font-semibold text-slate-900">
+                  {user.first_name} {user.last_name}
+                </span>{' '}
+                ?
+              </p>
+              <p className="mt-2 text-xs text-slate-600">
+                Cette action est <span className="font-semibold text-red-600">irréversible</span>.
+              </p>
             </div>
           </div>
 
           <Group justify="flex-end" mt="xs">
-            <Button variant="default" onClick={onClose}>
+            <Button
+              variant="default"
+              onClick={onClose}
+              className="border-0 bg-blue-50 text-blue-600 ring-1 ring-blue-200 hover:bg-blue-100"
+            >
               Annuler
             </Button>
-            <Button color="orange" loading={loading} onClick={() => onConfirmDelete(user)}>
+            <Button
+              color="red"
+              loading={loading}
+              onClick={() => onConfirmDelete(user)}
+              className="ring-1 ring-red-200"
+            >
               Supprimer
             </Button>
           </Group>
@@ -60,4 +78,3 @@ export function DeleteUserModal({
     </Modal>
   );
 }
-
