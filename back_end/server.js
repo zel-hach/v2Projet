@@ -7,7 +7,7 @@ import connectDB from "./config/db.js";
 import { seedAuthUsers } from "./utils/seedAuthUsers.js";
 import usersRouter from "./Routers/usersRouter.js";
 import authRouter from "./Routers/authRouter.js";
-import whatsappRouter from "./Routers/whatsappRouter.js";
+import emailRouter from "./Routers/emailRouter.js";
 import statsRouter from "./Routers/statsRouter.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -28,7 +28,7 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/users", usersRouter);
 app.use("/api/auth", authRouter);
-app.use("/api/whatsapp", whatsappRouter);
+app.use("/api/email", emailRouter);
 app.use("/api/stats", statsRouter);
 
 const port = process.env.PORT || 7000;

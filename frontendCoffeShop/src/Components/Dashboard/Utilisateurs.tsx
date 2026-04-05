@@ -7,7 +7,7 @@ import { EditUserModal, type EditUserForm } from './Utilisateurs/EditUserModal';
 import { WhatsAppModal } from './Utilisateurs/WhatsAppModal';
 import { DeleteUserModal } from './Utilisateurs/DeleteUserModal';
 import { UsersTable } from './Utilisateurs/UsersTable';
-import { getUserId, normalizePhoneForWhatsApp } from './Utilisateurs/userHelpers';
+import { getUserId } from './Utilisateurs/userHelpers';
 import {
   MAX_VIDEO_DURATION_SEC,
   formatDurationSec,
@@ -135,7 +135,9 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
     }
 
     const sizeCheck = validateVideoSize(selected);
+    console.log('sizeCheck', sizeCheck);
     if (!sizeCheck.ok) {
+      console.log('sizeCheck.message', sizeCheck.message);
       setVideoError(sizeCheck.message);
       revokeVideoBlob();
       setVideoFile(null);
@@ -243,19 +245,24 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
 
   const sendWhatsApp = async () => {
     if (!selectedUser) return;
-    const phone = normalizePhoneForWhatsApp(selectedUser.phone ?? '');
-    if (!phone) return;
+    const to = String(selectedUser.email || '').trim();
+    if (!to) return;
     setWhatsAppStatus('sending');
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/whatsapp/send`, {
+      const res = await fetch(`${API_BASE_URL}/api/email/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ phone, message: whatsAppMessage }),
+        body: JSON.stringify({
+          to,
+          message: whatsAppMessage,
+          imageUrl: mediaAbsoluteUrl(selectedUser.imageUrl ?? null),
+          videoUrl: mediaAbsoluteUrl(selectedUser.videoUrl ?? null),
+        }),
       });
 
       if (!res.ok) {

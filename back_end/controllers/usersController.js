@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 import User from "../models/User.js";
+import {
+  uploadBufferToCloudinary,
+  resourceTypeFromMime,
+  isCloudinaryConfigured,
+} from "../services/cloudinaryUpload.js";
 
 function escapeRegex(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -38,6 +43,23 @@ export async function getUsers(req, res) {
   }
 }
 
+/** Un visiteur par id (même auth que la liste). */
+export async function getUserById(req, res) {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid user id" });
+    }
+    const user = await User.findById(id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
 export async function updateUser(req, res) {
   try {
     const { id } = req.params;
@@ -63,11 +85,28 @@ export async function updateUser(req, res) {
     }
 
     const files = req.files;
+    if (files?.image?.[0] || files?.video?.[0]) {
+      if (!isCloudinaryConfigured()) {
+        return res.status(503).json({
+          message:
+            "Upload impossible : configurez CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY et CLOUDINARY_API_SECRET dans .env",
+        });
+      }
+    }
+
     if (files?.image?.[0]) {
-      updates.imageUrl = `/uploads/users/${files.image[0].filename}`;
+      const f = files.image[0];
+      const { secure_url } = await uploadBufferToCloudinary(f.buffer, {
+        resourceType: resourceTypeFromMime(f.mimetype),
+      });
+      updates.imageUrl = secure_url;
     }
     if (files?.video?.[0]) {
-      updates.videoUrl = `/uploads/users/${files.video[0].filename}`;
+      const f = files.video[0];
+      const { secure_url } = await uploadBufferToCloudinary(f.buffer, {
+        resourceType: "video",
+      });
+      updates.videoUrl = secure_url;
     }
 
     const user = await User.findByIdAndUpdate(id, { $set: updates }, { new: true });

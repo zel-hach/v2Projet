@@ -1,26 +1,9 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import multer from "multer";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const UPLOAD_DIR = path.join(__dirname, "..", "uploads", "users");
+/** Max taille par fichier (vidéo ou image) : 100 Mo (limite Cloudinary upload raisonnable ; ajuster si besoin). */
+const MAX_FILE_BYTES = Number(process.env.UPLOAD_MAX_BYTES) || 300 * 1024 * 1024;
 
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname) || "";
-    const safe = `${Date.now()}-${file.fieldname}${ext}`;
-    cb(null, safe);
-  },
-});
-
-/** Max taille par fichier (vidéo ou image) : 3 Go */
-const MAX_FILE_BYTES = 3 * 1024 * 1024 * 1024;
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,

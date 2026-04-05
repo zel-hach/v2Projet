@@ -1,5 +1,5 @@
-/** Aligné sur `back_end/middlewares/userUpload.js` (multer limits.fileSize) : 3 Go. */
-export const MAX_VIDEO_BYTES = 3 * 1024 * 1024 * 1024;
+/** Aligné sur le backend (multer + Cloudinary) : 100 Mo par défaut. */
+export const MAX_VIDEO_BYTES = 300 * 1024 * 1024;
 
 /** Durée max acceptée pour une vidéo (secondes). */
 export const MAX_VIDEO_DURATION_SEC = 180;
@@ -13,10 +13,12 @@ export function formatDurationSec(totalSec: number): string {
 }
 
 export function validateVideoSize(file: File): { ok: true } | { ok: false; message: string } {
+  console.log('file.size', file.size);
+  console.log('MAX_VIDEO_BYTES', MAX_VIDEO_BYTES);
   if (file.size > MAX_VIDEO_BYTES) {
     return {
       ok: false,
-      message: 'Fichier trop volumineux (maximum 3 Go).',
+      message: 'Fichier trop volumineux (maximum 100 Mo).',
     };
   }
   return { ok: true };

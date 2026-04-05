@@ -1,10 +1,10 @@
 import { Modal, Button, Textarea, Group, Stack } from '@mantine/core';
 import type { CoffeeUser } from '../../../data/coffeeUsers';
-import { normalizePhoneForWhatsApp } from './userHelpers';
+import { mediaAbsoluteUrl } from '../../../data/usersApi';
 import { dashboardModalClassNames, dashboardModalOverlayProps } from './modalTheme';
 import { UserAvatarCircle } from './UserAvatarCircle';
 
-type WhatsAppModalProps = {
+type EmailUserModalProps = {
   opened: boolean;
   onClose: () => void;
   user: CoffeeUser | null;
@@ -23,6 +23,10 @@ const textareaStyles = {
   },
 } as const;
 
+function isValidEmail(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || '').trim());
+}
+
 export function WhatsAppModal({
   opened,
   onClose,
@@ -31,8 +35,11 @@ export function WhatsAppModal({
   onMessageChange,
   onSend,
   loading,
-}: WhatsAppModalProps) {
-  const phoneOk = user ? Boolean(normalizePhoneForWhatsApp(user.phone ?? '')) : false;
+}: EmailUserModalProps) {
+  const email = user?.email?.trim() ?? '';
+  const emailOk = Boolean(user && isValidEmail(email));
+  const img = user ? mediaAbsoluteUrl(user.imageUrl ?? null) : null;
+  const vid = user ? mediaAbsoluteUrl(user.videoUrl ?? null) : null;
 
   return (
     <Modal
@@ -41,7 +48,7 @@ export function WhatsAppModal({
       centered
       withinPortal
       zIndex={9999}
-      title={<span className="text-xl font-bold text-slate-900">Envoyer un message WhatsApp</span>}
+      title={<span className="text-xl font-bold text-slate-900">Envoyer un e-mail</span>}
       overlayProps={dashboardModalOverlayProps}
       classNames={{
         ...dashboardModalClassNames,
@@ -62,9 +69,24 @@ export function WhatsAppModal({
               <p className="truncate font-semibold text-slate-900">
                 {user.first_name} {user.last_name}
               </p>
-              <p className="truncate text-sm text-slate-600">{user.phone || '—'}</p>
+              <p className="truncate text-sm text-slate-600">{email || '— (e-mail requis)'}</p>
             </div>
           </div>
+
+          <p className="text-xs text-slate-600">
+            L’e-mail inclura automatiquement la photo et la vidéo du profil lorsqu’elles sont enregistrées
+            (liens Cloudinary).
+            {img ? (
+              <span className="ml-1 font-medium text-orange-800">Photo : oui.</span>
+            ) : (
+              <span className="ml-1">Photo : non.</span>
+            )}
+            {vid ? (
+              <span className="ml-1 font-medium text-orange-800">Vidéo : oui.</span>
+            ) : (
+              <span className="ml-1">Vidéo : non.</span>
+            )}
+          </p>
 
           <Textarea
             value={message}
@@ -86,10 +108,10 @@ export function WhatsAppModal({
               color="orange"
               onClick={onSend}
               loading={loading}
-              disabled={!phoneOk || !message.trim()}
+              disabled={!emailOk || !message.trim()}
               className="bg-[#FF5722]"
             >
-              Envoyer
+              Envoyer l’e-mail
             </Button>
           </Group>
         </Stack>

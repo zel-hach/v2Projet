@@ -23,7 +23,7 @@ export async function updateUser(id: string | number, formData: FormData): Promi
       lower.includes('limit')
     ) {
       throw new Error(
-        'La vidéo est trop volumineuse (maximum 3 Go). Réduisez la taille du fichier.'
+        'La vidéo est trop volumineuse (maximum 100 Mo). Réduisez la taille du fichier.'
       );
     }
     throw new Error(raw || `Erreur ${res.status}`);

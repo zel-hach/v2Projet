@@ -104,7 +104,7 @@ export function UsersTable({
                         className="px-3 py-1.5 text-xs font-semibold rounded-md bg-orange-50 text-orange-600 ring-1 ring-orange-200 hover:bg-orange-100 transition"
                         onClick={() => onWhatsApp(user)}
                       >
-                        Envoyer
+                        E-mail
                       </button>
 
                       {canDelete ? (
