@@ -15,7 +15,7 @@ interface FieldProps {
   icon: React.ReactNode;
 }
 
-const Field: React.FC<FieldProps> = ({ id, label, type, value, placeholder, onChange, icon }) => {
+const Field: React.FC<FieldProps> = ({ id, label, type, value, placeholder, onChange}) => {
   const [focused, setFocused] = useState(false);
 
   return (
