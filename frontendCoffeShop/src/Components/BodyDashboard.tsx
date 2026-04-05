@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { fetchUsers, type CoffeeUser } from '../data/coffeeUsers';
 import { fetchDashboardStats, type DashboardStats } from '../data/dashboardApi';
 import { getSessionShortName } from '../data/sessionUser';

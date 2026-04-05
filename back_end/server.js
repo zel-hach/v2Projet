@@ -36,9 +36,9 @@ const port = process.env.PORT || 7000;
 async function start() {
   await connectDB();
   await seedAuthUsers();
-  // app.listen(port, () => {
-  //   console.log(`Server is running on port http://localhost:${port}`);
-  // });
+  app.listen(port, () => {
+    console.log(`Server is running on port http://localhost:${port}`);
+  });
 }
 
 start().catch((err) => {
