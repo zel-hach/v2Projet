@@ -246,6 +246,7 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
     setWhatsAppModalOpen(true);
   };
 
+  console.log(whatsAppStatus);
   const sendWhatsApp = async () => {
     if (!selectedUser || emailSendInFlightRef.current) return;
     const to = String(selectedUser.email || '').trim();
