@@ -2,7 +2,7 @@
 export const MAX_VIDEO_BYTES = 300 * 1024 * 1024;
 
 /** Durée max acceptée pour une vidéo (secondes). */
-export const MAX_VIDEO_DURATION_SEC = 180;
+export const MAX_VIDEO_DURATION_SEC = 280;
 
 export function formatDurationSec(totalSec: number): string {
   const s = Math.max(0, Math.round(totalSec));
