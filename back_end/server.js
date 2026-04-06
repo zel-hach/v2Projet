@@ -17,11 +17,10 @@ dotenv.config();
 
 const corsOrigin =
   process.env.CORS_ORIGIN ||
-  "http://localhost:5174,http://127.0.0.1:5174";
+  "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174";
 app.use(
   cors({
-    origin: corsOrigin === "*" ? true : corsOrigin.split(",").map((o) => o.trim()),
-    credentials: true,
+    origin: true
   })
 );
 app.use(express.json());

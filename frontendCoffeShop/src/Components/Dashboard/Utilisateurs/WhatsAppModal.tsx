@@ -1,4 +1,4 @@
-import { Modal, Button, Textarea, Group, Stack } from '@mantine/core';
+import { Alert, Modal, Button, Textarea, Group, Stack } from '@mantine/core';
 import type { CoffeeUser } from '../../../data/coffeeUsers';
 import { mediaAbsoluteUrl } from '../../../data/usersApi';
 import { dashboardModalClassNames, dashboardModalOverlayProps } from './modalTheme';
@@ -10,8 +10,11 @@ type EmailUserModalProps = {
   user: CoffeeUser | null;
   message: string;
   onMessageChange: (value: string) => void;
-  onSend: () => void;
+  /** Peut être async : le bouton attend la fin avant de relâcher le loader côté parent. */
+  onSend: () => void | Promise<void>;
   loading?: boolean;
+  sendError?: string | null;
+  onDismissSendError?: () => void;
 };
 
 const textareaStyles = {
@@ -35,11 +38,19 @@ export function WhatsAppModal({
   onMessageChange,
   onSend,
   loading,
+  sendError,
+  onDismissSendError,
 }: EmailUserModalProps) {
   const email = user?.email?.trim() ?? '';
   const emailOk = Boolean(user && isValidEmail(email));
   const img = user ? mediaAbsoluteUrl(user.imageUrl ?? null) : null;
   const vid = user ? mediaAbsoluteUrl(user.videoUrl ?? null) : null;
+
+  const handleSend = () => {
+    void Promise.resolve(onSend()).catch(() => {
+      /* erreurs gérées dans le parent (état error) */
+    });
+  };
 
   return (
     <Modal
@@ -96,6 +107,17 @@ export function WhatsAppModal({
             styles={textareaStyles}
           />
 
+          {sendError ? (
+            <Alert
+              color="red"
+              title="Envoi impossible"
+              withCloseButton
+              onClose={() => onDismissSendError?.()}
+            >
+              {sendError}
+            </Alert>
+          ) : null}
+
           <Group justify="flex-end" mt="xs">
             <Button
               variant="default"
@@ -106,7 +128,7 @@ export function WhatsAppModal({
             </Button>
             <Button
               color="orange"
-              onClick={onSend}
+              onClick={handleSend}
               loading={loading}
               disabled={!emailOk || !message.trim()}
               className="bg-[#FF5722]"

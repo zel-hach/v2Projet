@@ -48,10 +48,12 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [whatsAppMessage, setWhatsAppMessage] = useState('');
   const [whatsAppStatus, setWhatsAppStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [emailSendError, setEmailSendError] = useState<string | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
   const videoBlobUrlRef = useRef<string | null>(null);
+  const emailSendInFlightRef = useRef(false);
 
   const [form, setForm] = useState<EditUserForm>({
     first_name: '',
@@ -240,13 +242,16 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
     setSelectedUser(user);
     setWhatsAppMessage(`Bonjour ${user.first_name}, `);
     setWhatsAppStatus('idle');
+    setEmailSendError(null);
     setWhatsAppModalOpen(true);
   };
 
   const sendWhatsApp = async () => {
-    if (!selectedUser) return;
+    if (!selectedUser || emailSendInFlightRef.current) return;
     const to = String(selectedUser.email || '').trim();
     if (!to) return;
+
+    emailSendInFlightRef.current = true;
     setWhatsAppStatus('sending');
 
     try {
@@ -265,9 +270,14 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
         }),
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.message || `Erreur API (${res.status})`);
+        const msg =
+          data && typeof data === 'object' && data !== null && typeof (data as { message?: unknown }).message === 'string'
+            ? (data as { message: string }).message
+            : '';
+        throw new Error(msg || `Erreur API (${res.status})`);
       }
 
       setWhatsAppStatus('sent');
@@ -277,6 +287,14 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
       }, 900);
     } catch (err) {
       setWhatsAppStatus('error');
+      const msg = err instanceof Error ? err.message : String(err);
+      setEmailSendError(
+        msg.includes('Failed to fetch') || msg === 'NetworkError when attempting to fetch resource.'
+          ? `Impossible de joindre l’API (${API_BASE_URL}). Vérifiez que le backend tourne et que VITE_API_URL dans .env correspond à son PORT (souvent 7000).`
+          : msg || 'Échec de l’envoi.'
+      );
+    } finally {
+      emailSendInFlightRef.current = false;
     }
   };
 
@@ -345,12 +363,23 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
 
         <WhatsAppModal
           opened={whatsAppModalOpen}
-          onClose={() => setWhatsAppModalOpen(false)}
+          onClose={() => {
+            setWhatsAppModalOpen(false);
+            setEmailSendError(null);
+          }}
           user={selectedUser}
           message={whatsAppMessage}
-          onMessageChange={setWhatsAppMessage}
-          onSend={sendWhatsApp}
-          loading={whatsAppStatus === 'sending'}
+          onMessageChange={(v) => {
+            setWhatsAppMessage(v);
+            setEmailSendError(null);
+          }}
+          // onSend={sendWhatsApp}
+          onSend={async() => {
+            await sendWhatsApp();
+            setEmailSendError(null);
+          }}
+          sendError={emailSendError}
+          onDismissSendError={() => setEmailSendError(null)}
         />
 
         <DeleteUserModal
