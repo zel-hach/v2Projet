@@ -1,6 +1,7 @@
-import { forwardRef } from 'react';
-import { Modal, Button, TextInput, Select } from '@mantine/core';
+import { forwardRef, useEffect, useState } from 'react';
+import { Loader, Modal, Button, TextInput, Select } from '@mantine/core';
 import { RiCameraAiFill } from 'react-icons/ri';
+import { appendCloudinaryUploadFields, cloudinaryUploadUrl } from '../../../data/cloudinaryConfig';
 import { dashboardModalClassNames, dashboardModalOverlayProps } from './modalTheme';
 import { UserAvatarCircle } from './UserAvatarCircle';
 
@@ -25,6 +26,8 @@ type EditUserModalProps = {
   videoPreview: string | null;
   existingVideoUrl?: string | null;
   onVideoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Appelé après upload Cloudinary réussi (URL à envoyer au backend en `urlVideo`). */
+  onCloudinaryVideoUrl?: (secureUrl: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   submitting?: boolean;
   submitError?: string | null;
@@ -75,6 +78,7 @@ function SectionDivider({ label }: { label: string }) {
   );
 }
 
+
 export function EditUserModal({
   opened,
   onClose,
@@ -86,15 +90,65 @@ export function EditUserModal({
   onImageChange,
   videoPreview,
   existingVideoUrl,
-  onVideoChange,
+  onVideoChange: _onVideoChange,
+  onCloudinaryVideoUrl,
   onSubmit,
   submitting,
   submitError,
   videoError,
 }: EditUserModalProps) {
   const displayImage = imagePreview || existingImageUrl || null;
-  const displayVideo = videoPreview || existingVideoUrl || null;
+  const [videoUrlFromUpload, setVideoUrlFromUpload] = useState<string | null>(null);
+  const [videoUploadPending, setVideoUploadPending] = useState(false);
+  const [videoUploadError, setVideoUploadError] = useState<string | null>(null);
+  const displayVideo = videoPreview || existingVideoUrl || videoUrlFromUpload || null;
 
+  useEffect(() => {
+    if (!opened) {
+      setVideoUrlFromUpload(null);
+      setVideoUploadPending(false);
+      setVideoUploadError(null);
+    }
+  }, [opened]);
+
+
+  const uploadToCloudinary = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    appendCloudinaryUploadFields(formData);
+
+    const res = await fetch(cloudinaryUploadUrl('video'), {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = (await res.json()) as { secure_url?: string; error?: { message?: string } };
+    if (!res.ok || !data.secure_url) {
+      throw new Error(data.error?.message || 'Échec du téléversement');
+    }
+    return data.secure_url;
+  };
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const file = input.files?.[0] ?? null;
+    if (!file) return;
+    setVideoUploadError(null);
+    setVideoUploadPending(true);
+    try {
+      const uploadedUrl = await uploadToCloudinary(file);
+      setVideoUrlFromUpload(uploadedUrl);
+      onCloudinaryVideoUrl?.(uploadedUrl);
+    } catch (err) {
+      const msg =
+        err instanceof Error && err.message ? err.message : 'Impossible d’envoyer la vidéo. Réessayez.';
+      setVideoUploadError(msg);
+      input.value = '';
+    } finally {
+      setVideoUploadPending(false);
+    }
+  };
+  
   return (
     <Modal
       opened={opened}
@@ -148,7 +202,6 @@ export function EditUserModal({
         onSubmit={onSubmit}
         className="flex h-full min-h-0 flex-col overflow-hidden bg-white"
       >
-        {/* Haut : image */}
         <div className="flex shrink-0 flex-col items-center gap-2 border-b border-orange-900/10 bg-white px-5 pb-3 pt-3">
           <div className="relative">
             <UserAvatarCircle
@@ -166,7 +219,6 @@ export function EditUserModal({
           <p className="text-center text-[11px] text-slate-500">Cliquez sur l’icône pour changer la photo</p>
         </div>
 
-        {/* Sous l’image : toutes les informations (sans scroll) */}
         <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-5 py-2">
           <SectionDivider label="Informations" />
           <div className="grid min-h-0 shrink-0 grid-cols-1 gap-x-3 gap-y-2 sm:grid-cols-2">
@@ -229,21 +281,36 @@ export function EditUserModal({
           {submitError ? <div className="shrink-0 text-xs text-red-600">{submitError}</div> : null}
         </div>
 
-        {/* Bas : upload + aperçu vidéo */}
         <div className="shrink-0 border-t border-orange-900/20 bg-orange-200/50 px-5 py-3">
           <SectionDivider label="Vidéo (optionnel)" />
           <input
             type="file"
             accept="video/*"
-            onChange={onVideoChange}
-            className="mt-2 w-full rounded-lg border border-orange-900/20 bg-white px-2 py-1.5 text-xs text-slate-900 file:mr-2 file:rounded file:border-0 file:bg-blue-50 file:px-2 file:py-1 file:text-xs file:font-medium file:text-blue-600"
+            onChange={handleFile}
+            disabled={videoUploadPending}
+            className="mt-2 w-full rounded-lg border border-orange-900/20 bg-white px-2 py-1.5 text-xs text-slate-900 file:mr-2 file:rounded file:border-0 file:bg-blue-50 file:px-2 file:py-1 file:text-xs file:font-medium file:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
           />
-          {displayVideo ? (
+          {videoUploadPending ? (
+            <div
+              className="mt-2 flex items-center gap-2 rounded-lg border border-orange-900/20 bg-white/90 px-3 py-2 text-xs text-slate-700"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader size="sm" color="orange" />
+              <span>Envoi de la vidéo en cours… Merci de patienter.</span>
+            </div>
+          ) : null}
+          {displayVideo && !videoUploadPending ? (
             <video
               src={displayVideo}
               className="mt-2 h-40 w-full rounded-lg border border-orange-900/20 bg-black/5 object-contain"
               controls
             />
+          ) : null}
+          {videoUploadError ? (
+            <div className="mt-1 text-xs text-red-600" role="alert">
+              {videoUploadError}
+            </div>
           ) : null}
           {videoError ? (
             <div className="mt-1 text-xs text-red-600" role="alert">
@@ -258,7 +325,7 @@ export function EditUserModal({
             type="button"
             size="xs"
             onClick={onClose}
-            disabled={submitting}
+            disabled={submitting || videoUploadPending}
             className="border-0 bg-blue-50 text-blue-600 ring-1 ring-blue-200 hover:bg-blue-100"
           >
             Annuler
@@ -268,7 +335,7 @@ export function EditUserModal({
             size="xs"
             color="orange"
             loading={submitting}
-            disabled={Boolean(videoError)}
+            disabled={Boolean(videoError) || videoUploadPending}
             className="bg-[#FF5722]"
           >
             Enregistrer

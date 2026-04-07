@@ -4,13 +4,14 @@ import { mediaAbsoluteUrl } from '../../../data/usersApi';
 import { dashboardModalClassNames, dashboardModalOverlayProps } from './modalTheme';
 import { UserAvatarCircle } from './UserAvatarCircle';
 
+/** L’envoi utilise Brevo (API REST) depuis le parent lorsque `VITE_BREVO_*` est défini dans `.env`, sinon l’API backend `/api/email/send`. */
+
 type EmailUserModalProps = {
   opened: boolean;
   onClose: () => void;
   user: CoffeeUser | null;
   message: string;
   onMessageChange: (value: string) => void;
-  /** Peut être async : le bouton attend la fin avant de relâcher le loader côté parent. */
   onSend: () => void | Promise<void>;
   loading?: boolean;
   sendError?: string | null;

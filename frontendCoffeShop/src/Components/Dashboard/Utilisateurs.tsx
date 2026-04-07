@@ -2,6 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
 import { fetcher, type CoffeeUser, usersListUrl } from '../../data/coffeeUsers';
 import { API_BASE_URL } from '../../data/apiConfig';
+import { appendCloudinaryUploadFields, cloudinaryUploadUrl } from '../../data/cloudinaryConfig';
+import {
+  buildVisitorEmailBodies,
+  isBrevoConfigured,
+  sendEmailViaBrevo,
+} from '../../data/brevoEmail';
 import { updateUser, mediaAbsoluteUrl } from '../../data/usersApi';
 import { EditUserModal, type EditUserForm } from './Utilisateurs/EditUserModal';
 import { WhatsAppModal } from './Utilisateurs/WhatsAppModal';
@@ -55,6 +61,8 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
   const videoBlobUrlRef = useRef<string | null>(null);
   const emailSendInFlightRef = useRef(false);
 
+  const [urlImage, setUrlImage] = useState<string | null>(null);
+  const [urlVideo, setUrlVideo] = useState<string | null>(null);
   const [form, setForm] = useState<EditUserForm>({
     first_name: '',
     last_name: '',
@@ -83,6 +91,8 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
   const resetEditMediaState = () => {
     setImagePreview(null);
     setImageFile(null);
+    setUrlImage(null);
+    setUrlVideo(null);
     if (videoBlobUrlRef.current) {
       URL.revokeObjectURL(videoBlobUrlRef.current);
       videoBlobUrlRef.current = null;
@@ -109,12 +119,45 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
     }
   }, [selectedUser]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadImageToCloudinary = async (file: File): Promise<string> => {
+    const fd = new FormData();
+    fd.append('file', file);
+    appendCloudinaryUploadFields(fd);
+    const res = await fetch(cloudinaryUploadUrl('image'), {
+      method: 'POST',
+      body: fd,
+    });
+    const data = (await res.json()) as { secure_url?: string };
+    if (!res.ok || !data.secure_url) {
+      throw new Error((data as { error?: { message?: string } }).error?.message || 'Échec upload image');
+    }
+    return data.secure_url;
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
-    if (selected) {
+    if (!selected) return;
+    try {
+      const secureUrl = await uploadImageToCloudinary(selected);
+      setUrlImage(secureUrl);
+      setImageFile(null);
+      setImagePreview(secureUrl);
+    } catch {
+      setUrlImage(null);
       setImageFile(selected);
       setImagePreview(URL.createObjectURL(selected));
     }
+  };
+
+  const handleCloudinaryVideoUrl = (secureUrl: string) => {
+    if (videoBlobUrlRef.current) {
+      URL.revokeObjectURL(videoBlobUrlRef.current);
+      videoBlobUrlRef.current = null;
+    }
+    setUrlVideo(secureUrl);
+    setVideoFile(null);
+    setVideoPreview(secureUrl);
+    setVideoError(null);
   };
 
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,17 +176,17 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
       revokeVideoBlob();
       setVideoFile(null);
       setVideoPreview(null);
+      setUrlVideo(null);
       return;
     }
 
     const sizeCheck = validateVideoSize(selected);
-    console.log('sizeCheck', sizeCheck);
     if (!sizeCheck.ok) {
-      console.log('sizeCheck.message', sizeCheck.message);
       setVideoError(sizeCheck.message);
       revokeVideoBlob();
       setVideoFile(null);
       setVideoPreview(null);
+      setUrlVideo(null);
       input.value = '';
       return;
     }
@@ -157,6 +200,7 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
         revokeVideoBlob();
         setVideoFile(null);
         setVideoPreview(null);
+        setUrlVideo(null);
         input.value = '';
         return;
       }
@@ -165,11 +209,13 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
       revokeVideoBlob();
       setVideoFile(null);
       setVideoPreview(null);
+      setUrlVideo(null);
       input.value = '';
       return;
     }
 
     revokeVideoBlob();
+    setUrlVideo(null);
     const nextUrl = URL.createObjectURL(selected);
     videoBlobUrlRef.current = nextUrl;
     setVideoFile(selected);
@@ -184,6 +230,8 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
     const formData = new FormData();
     if (imageFile) formData.append('image', imageFile);
     if (videoFile) formData.append('video', videoFile);
+    if (urlImage) formData.append('urlImage', urlImage);
+    if (urlVideo) formData.append('urlVideo', urlVideo);
     formData.append('first_name', form.first_name);
     formData.append('last_name', form.last_name);
     formData.append('email', form.email);
@@ -246,7 +294,6 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
     setWhatsAppModalOpen(true);
   };
 
-  console.log(whatsAppStatus);
   const sendWhatsApp = async () => {
     if (!selectedUser || emailSendInFlightRef.current) return;
     const to = String(selectedUser.email || '').trim();
@@ -256,29 +303,46 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
     setWhatsAppStatus('sending');
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/email/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
+      const imageUrl = mediaAbsoluteUrl(selectedUser.imageUrl ?? null);
+      const videoUrl = mediaAbsoluteUrl(selectedUser.videoUrl ?? null);
+
+      if (isBrevoConfigured()) {
+        const { htmlContent, textContent } = buildVisitorEmailBodies(
+          whatsAppMessage,
+          imageUrl,
+          videoUrl
+        );
+        await sendEmailViaBrevo({
           to,
-          message: whatsAppMessage,
-          imageUrl: mediaAbsoluteUrl(selectedUser.imageUrl ?? null),
-          videoUrl: mediaAbsoluteUrl(selectedUser.videoUrl ?? null),
-        }),
-      });
+          subject: `Message — ${selectedUser.first_name} ${selectedUser.last_name}`,
+          htmlContent,
+          textContent,
+        });
+      } else {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE_URL}/api/email/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            to,
+            message: whatsAppMessage,
+            imageUrl,
+            videoUrl,
+          }),
+        });
 
-      const data = await res.json().catch(() => null);
+        const data = await res.json().catch(() => null);
 
-      if (!res.ok) {
-        const msg =
-          data && typeof data === 'object' && data !== null && typeof (data as { message?: unknown }).message === 'string'
-            ? (data as { message: string }).message
-            : '';
-        throw new Error(msg || `Erreur API (${res.status})`);
+        if (!res.ok) {
+          const msg =
+            data && typeof data === 'object' && data !== null && typeof (data as { message?: unknown }).message === 'string'
+              ? (data as { message: string }).message
+              : '';
+          throw new Error(msg || `Erreur API (${res.status})`);
+        }
       }
 
       setWhatsAppStatus('sent');
@@ -332,6 +396,8 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
               setSelectedUser(user);
               setVideoError(null);
               setEditError(null);
+              setUrlImage(null);
+              setUrlVideo(null);
               setEditModalOpen(true);
             }}
             onWhatsApp={openWhatsAppModal}
@@ -356,6 +422,7 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
           videoPreview={videoPreview}
           existingVideoUrl={existingVideoUrl}
           onVideoChange={handleVideoChange}
+          onCloudinaryVideoUrl={handleCloudinaryVideoUrl}
           onSubmit={handleSubmit}
           submitting={editSaving}
           submitError={editError}
