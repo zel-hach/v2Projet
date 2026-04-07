@@ -434,6 +434,7 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
           onClose={() => {
             setWhatsAppModalOpen(false);
             setEmailSendError(null);
+            setWhatsAppStatus('idle');
           }}
           user={selectedUser}
           message={whatsAppMessage}
@@ -441,11 +442,11 @@ const Utilisateurs = ({ listFilter }: UtilisateursProps) => {
             setWhatsAppMessage(v);
             setEmailSendError(null);
           }}
-          // onSend={sendWhatsApp}
-          onSend={async() => {
+          onSend={async () => {
             await sendWhatsApp();
             setEmailSendError(null);
           }}
+          loading={whatsAppStatus === 'sending'}
           sendError={emailSendError}
           onDismissSendError={() => setEmailSendError(null)}
         />
